@@ -103,6 +103,7 @@ type
     function DataSet : TDataSet;
     function Open(aSQL : String) : iSimpleQuery; overload;
     function Open : iSimpleQuery; overload;
+    function &EndTransaction: iSimpleQuery;
   end;
 
 

@@ -9,20 +9,22 @@ uses
 
 Type
   TSimpleQueryFiredac = class(TInterfacedObject, iSimpleQuery)
-    private
-      FConnection : TFDConnection;
-      FQuery : TFDQuery;
-      FParams : TParams;
-    public
-      constructor Create(aConnection : TFDConnection);
-      destructor Destroy; override;
-      class function New(aConnection : TFDConnection) : iSimpleQuery;
-      function SQL : TStrings;
-      function Params : TParams;
-      function ExecSQL : iSimpleQuery;
-      function DataSet : TDataSet;
-      function Open(aSQL : String) : iSimpleQuery; overload;
-      function Open : iSimpleQuery; overload;
+  private
+    FConnection: TFDConnection;
+    FTransaction: TFDTransaction;
+    FQuery: TFDQuery;
+    FParams: TParams;
+  public
+    constructor Create(aConnection: TFDConnection);
+    destructor Destroy; override;
+    class function New(aConnection: TFDConnection): iSimpleQuery;
+    function SQL: TStrings;
+    function Params: TParams;
+    function ExecSQL: iSimpleQuery;
+    function DataSet: TDataSet;
+    function Open(aSQL: String): iSimpleQuery; overload;
+    function Open: iSimpleQuery; overload;
+    function &EndTransaction: iSimpleQuery;
   end;
 
 implementation
@@ -32,11 +34,20 @@ uses
 
 { TSimpleQuery<T> }
 
-constructor TSimpleQueryFiredac.Create(aConnection : TFDConnection);
+constructor TSimpleQueryFiredac.Create(aConnection: TFDConnection);
 begin
   FQuery := TFDQuery.Create(nil);
   FConnection := aConnection;
   FQuery.Connection := FConnection;
+
+  FTransaction := TFDTransaction.Create(nil);
+  FTransaction.Connection := FConnection;
+
+  FQuery.Transaction := FTransaction;
+
+  if FTransaction.Active then
+    FTransaction.Commit;
+  FTransaction.StartTransaction;
 end;
 
 function TSimpleQueryFiredac.DataSet: TDataSet;
@@ -46,10 +57,17 @@ end;
 
 destructor TSimpleQueryFiredac.Destroy;
 begin
+  FreeAndNil(FTransaction);
   FreeAndNil(FQuery);
   if Assigned(FParams) then
     FreeAndNil(FParams);
   inherited;
+end;
+
+function TSimpleQueryFiredac.EndTransaction: iSimpleQuery;
+begin
+  if FTransaction.Active then
+    FTransaction.Commit;
 end;
 
 function TSimpleQueryFiredac.ExecSQL: iSimpleQuery;
@@ -59,13 +77,19 @@ begin
     FQuery.Params.Assign(FParams);
 
   FQuery.Prepare;
-  FQuery.ExecSQL;
+
+  try
+    FQuery.ExecSQL;
+  except
+    FTransaction.Rollback;
+  end;
 
   if Assigned(FParams) then
     FreeAndNil(FParams);
 end;
 
-class function TSimpleQueryFiredac.New(aConnection : TFDConnection): iSimpleQuery;
+class function TSimpleQueryFiredac.New(aConnection: TFDConnection)
+  : iSimpleQuery;
 begin
   Result := Self.Create(aConnection);
 end;
