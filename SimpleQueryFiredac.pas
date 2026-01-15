@@ -25,6 +25,7 @@ Type
     function Open(aSQL: String): iSimpleQuery; overload;
     function Open: iSimpleQuery; overload;
     function &EndTransaction: iSimpleQuery;
+    function RowsAffected: Integer;
   end;
 
 implementation
@@ -75,17 +76,22 @@ begin
   Result := Self;
   if Assigned(FParams) then
     FQuery.Params.Assign(FParams);
-
-  FQuery.Prepare;
-
   try
-    FQuery.ExecSQL;
-  except
-    FTransaction.Rollback;
-  end;
+    FQuery.Prepare;
 
-  if Assigned(FParams) then
-    FreeAndNil(FParams);
+    try
+      FQuery.ExecSQL;
+    except
+      on E: Exception do
+      begin
+        FTransaction.Rollback;
+        raise Exception.Create(E.Message);
+      end;
+    end;
+  finally
+    if Assigned(FParams) then
+      FreeAndNil(FParams);
+  end;
 end;
 
 class function TSimpleQueryFiredac.New(aConnection: TFDConnection)
@@ -124,6 +130,12 @@ begin
     FParams.Assign(FQuery.Params);
   end;
   Result := FParams;
+end;
+
+function TSimpleQueryFiredac.RowsAffected: Integer;
+begin
+  if Assigned(FQuery) then
+    Result := FQuery.RowsAffected;
 end;
 
 function TSimpleQueryFiredac.SQL: TStrings;
