@@ -27,6 +27,7 @@ type
     function Delete: iSimpleDAO<T>; overload;
 {$ENDIF}
     function Insert(aValue: T): iSimpleDAO<T>; overload;
+    function Insert(aValue: T; aReturning: Boolean): iSimpleDAO<T>; overload;
     function Update(aValue: T): iSimpleDAO<T>; overload;
     function Delete(aValue: T): iSimpleDAO<T>; overload;
     function LastID: iSimpleDAO<T>;
@@ -87,6 +88,8 @@ type
   iSimpleSQL<T> = interface
     ['{1590A7C6-6E32-4579-9E60-38C966C1EB49}']
     function Insert(var aSQL: String): iSimpleSQL<T>;
+    function Insert(var aSQL: String; aReturning: Boolean)
+      : iSimpleSQL<T>; overload;
     function Update(var aSQL: String): iSimpleSQL<T>;
     function Delete(var aSQL: String): iSimpleSQL<T>;
     function Select(var aSQL: String): iSimpleSQL<T>;

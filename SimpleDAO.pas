@@ -38,6 +38,7 @@ Type
         class function New(aQuery: iSimpleQuery): iSimpleDAO<T>; overload;
         function DataSource(aDataSource: TDataSource): iSimpleDAO<T>;
         function Insert(aValue: T): iSimpleDAO<T>; overload;
+        function Insert(aValue: T; aReturning: Boolean): iSimpleDAO<T>; overload;
         function Update(aValue: T): iSimpleDAO<T>; overload;
         function Delete(aValue: T): iSimpleDAO<T>; overload;
         function Delete(aField: String; aValue: String): iSimpleDAO<T>;
@@ -358,6 +359,18 @@ begin
     FQuery.SQL.Add(aSQL);
     FQuery.Params.ParamByName(aKey).Value := aValue;
     FQuery.Open;
+end;
+
+function TSimpleDAO<T>.Insert(aValue: T; aReturning: Boolean): iSimpleDAO<T>;
+var
+  aSQL: String;
+begin
+  Result := Self;
+  TSimpleSQL<T>.New(aValue).Insert(aSQL, True);
+  FQuery.SQL.Clear;
+  FQuery.SQL.Add(aSQL);
+  Self.FillParameter(aValue);
+  FQuery.Open;
 end;
 
 end.

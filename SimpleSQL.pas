@@ -16,6 +16,8 @@ Type
       destructor Destroy; override;
       class function New(aInstance : T) : iSimpleSQL<T>;
       function Insert (var aSQL : String) : iSimpleSQL<T>;
+      function Insert(var aSQL: String; aReturning: Boolean)
+      : iSimpleSQL<T>; overload;
       function Update (var aSQL : String) : iSimpleSQL<T>;
       function Delete (var aSQL : String) : iSimpleSQL<T>;
       function Select (var aSQL : String) : iSimpleSQL<T>;
@@ -82,6 +84,21 @@ begin
     aSQL := aSQL + 'INSERT INTO ' + aClassName;
     aSQL := aSQL + ' (' + aFields + ') ';
     aSQL := aSQL + ' VALUES (' + aParam + ');';
+end;
+
+function TSimpleSQL<T>.Insert(var aSQL: String; aReturning: Boolean)
+  : iSimpleSQL<T>;
+var
+  aClassName, aFields, aParam, aPK: String;
+begin
+  Result := Self;
+  TSimpleRTTI<T>.New(FInstance).TableName(aClassName).FieldsInsert(aFields)
+    .Param(aParam).PrimaryKey(aPK);
+  aSQL := aSQL + 'INSERT INTO ' + aClassName;
+  aSQL := aSQL + ' (' + aFields + ') ';
+  aSQL := aSQL + ' VALUES (' + aParam + ')';
+  if aReturning then
+    aSQL := aSQL + ' RETURNING ' + aPK + ', ' + aFields;
 end;
 
 function TSimpleSQL<T>.Join(aSQL: String): iSimpleSQL<T>;
